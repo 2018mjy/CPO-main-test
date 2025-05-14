@@ -119,8 +119,14 @@ class FactualQA(Task):
     
     def get_input(self, idx: int) -> str:
         return self.data[idx]
-
+    # 评估模型生成的输出是否与预期的答案匹配
     def test_output(self, ground_truth: str, output: str, out):
+        """
+        ground_truth: 正确答案
+        output: 模型生成的输出
+        out: 用于存储结果的字典
+        return: a dict of {'r': 0 or 1}
+        """
         if 'answer is' not in output:
             print('====output====')
             print(output)

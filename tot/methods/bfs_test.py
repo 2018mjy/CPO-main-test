@@ -523,9 +523,18 @@ def get_samples_math_tot(task_prompt, x, y, n_generate_sample, tokenizer, Genera
     # print(len(samples))
     return samples, input_ids
 
+# 根据输入参数执行特定任务的推理过程
 def solve(args, task, x, model, tokenizer, device, to_print=True,
     # The prompt template to use, will default to med_template.
     prompt_template: str = "med_template", bbh_flag = None):
+    """
+        输入：
+        任务类型、输入数据、模型、分词器和设备等参数
+        输出：
+        - ys : 推理过程中生成的最终输出候选列表。
+        - {'steps': infos} : 包含每个步骤的详细信息的字典。
+        - out : 包含每个输入的生成、评估和选择信息的字典
+    """
     if args.backend == 'llama2-7b':
        from tot.llama_models import gpt
     else:
@@ -548,7 +557,7 @@ def solve(args, task, x, model, tokenizer, device, to_print=True,
     if bbh_flag != None:
         steps = 5
     for step in range(steps):
-        # generation
+        # 1. generation 生成：选择生成方法，调用相应的生成函数获取新的候选输出 new_ys
         select_new_ys = []
         n_select_sample = args.n_select_sample-len(select_new_ys)
         if args.method_generate == 'sample':
@@ -566,14 +575,14 @@ def solve(args, task, x, model, tokenizer, device, to_print=True,
         out[x][str(step)]['candiate'] = new_ys
         ids = list(range(len(new_ys)))
         
-        # evaluation
+        # 2. evaluation 评估 ：根据 args.method_evaluate 选择评估方法，计算每个候选输出的值 values 
         if args.method_evaluate == 'vote':
             values = get_votes(task, x, new_ys, args.n_evaluate_sample)
         elif args.method_evaluate == 'value':
             values = get_values(task, x, new_ys, args.n_evaluate_sample, tokenizer, GenerationConfig, model, device = device, step=step)
         out[x][str(step)]['values'] = values
         
-        # selection
+        # 3. selection 选择 ：根据 args.method_select 选择选择方法，从候选输出中选择新的输出 select_new_ys 
         if args.method_select == 'sample':
             ps = np.array(values) / sum(values)
             select_ids = np.random.choice(ids, size=n_select_sample, p=ps).tolist()
@@ -617,11 +626,13 @@ def solve(args, task, x, model, tokenizer, device, to_print=True,
                         print(values)
                         exit()
                     print(f'-- new_ys --: {sorted_new_ys}\n-- sol values --: {sorted_values}\n-- choices --: {select_new_ys}\n')
+        # 将每个步骤的相关信息记录到 infos 列表中
         infos.append({'step': step, 'x': x, 'ys': ys, 'new_ys': new_ys, 'values': values, 'select_new_ys': select_new_ys})
         ys = select_new_ys
     if to_print: 
         print(ys)
     out[x]['correct'] = ys
+    # 返回最终的输出候选列表 ys ，步骤信息 infos ，以及输出字典 out
     return ys, {'steps': infos}, out
 
 def naive_solve(args, task, x, model, tokenizer, device, to_print=True, bbh_flag = None):
