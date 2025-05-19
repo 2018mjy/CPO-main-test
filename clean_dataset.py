@@ -22,7 +22,7 @@ thought_number = 3
 
 final_thought = str(thought_number-1)
 # 读取原始json文件，遍历每个样本
-with open(path, 'r', 'utf-8') as f:
+with open(path, 'r', encoding='utf-8') as f:
 	instances = json.load(f)
 Corpus = {}
 for instance in instances:
@@ -254,6 +254,6 @@ for instance in Corpus:
 
 print(len(paired_data))
 
-with open(file_name,'w','utf-8') as f:
+with open(file_name,'w',encoding='utf-8') as f:
 	f.write(json.dumps(paired_data,ensure_ascii=False,indent=4))
 
